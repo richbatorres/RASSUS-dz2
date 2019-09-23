@@ -10,6 +10,9 @@ public class Neighbour {
 		this.ip = ip;
 		this.port = port;
 	}
+	
+	public Neighbour() {
+	}
 
 	public String getIp() {
 		return ip;
@@ -27,5 +30,8 @@ public class Neighbour {
 		this.port = port;
 	}
 	
+	public String toString() {
+		return "{\"ip\" : \"" + this.getIp() + "\", \"port\" : " + this.getPort() + "}, ";
+	}
 	
 }

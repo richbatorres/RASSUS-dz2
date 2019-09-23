@@ -22,7 +22,7 @@ public class Server implements Runnable {
         // host
         DatagramSocket socket = null;
 		try {
-			socket = new SimpleSimulatedDatagramSocket(PORT, 0.2, 200);
+			socket = new SimpleSimulatedDatagramSocket(PORT, 0.2, 1000);
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

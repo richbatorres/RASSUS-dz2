@@ -7,17 +7,25 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Client implements Runnable {
 
-	static final int PORT = 10002; // server port
+//	static final int PORT = 10002; // server port
 	
-	public Client() {
-		
+	static List<String> measurments = new ArrayList<String>();
+	static List<Neighbour> neighbours = new ArrayList<Neighbour>();
+	private int port;
+	
+	public Client(List<String> measurments, List<Neighbour> neighbours, EmulatedSystemClock clock, int port) {
+		Client.measurments = measurments;
+		Client.neighbours = neighbours;
+		this.port = port;
 	}
-	
+
 	public void run() {
 		String sendString = "Any second string...";
 
@@ -40,7 +48,7 @@ public class Client implements Runnable {
         //DatagramSocket socket = new SimulatedDatagramSocket(0.2, 1, 200, 50); //SOCKET
         DatagramSocket socket = null;
 		try {
-			socket = new SimpleSimulatedDatagramSocket(0.2, 200);
+			socket = new SimpleSimulatedDatagramSocket(0.2, 1000);
 		} catch (SocketException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -68,7 +76,6 @@ public class Client implements Runnable {
 			} //SENDTO
             System.out.print(new String(sendBuf));
         }
-        System.out.println("");
 
         StringBuffer receiveString = new StringBuffer();
 
