@@ -5,36 +5,45 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream.GetField;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import sensorReadings.Client;
+import sensorReadings.EmulatedSystemClock;
+import sensorReadings.Neighbour;
+import sensorReadings.Server;
+
 public class Main {
 	
 	static List<Neighbour> neighbours = new ArrayList<Neighbour>();
 	static List<String> measurments = new ArrayList<String>();
+	static Map<Integer, Integer> vTimestamp = new LinkedHashMap<Integer, Integer>();
 	private static String ip;
-	private static int port;
+	private int port;
 
 	public static void main(String[] args) {
 		
 		EmulatedSystemClock clock = new EmulatedSystemClock();
+		Main main = new Main();
 		
-//		String fileName = "neighbours.json";
-//		 
-//		ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-		//File file = new File(classLoader.getResource(fileName).getFile());
-		File neighboursFile = new File("C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\neighbours.json"); 
-		File measurmentsFile = new File("C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\mjerenja.csv");
+		//File neighboursFile = new File("C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\neighbours.json"); 
+		//File measurmentsFile = new File("C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\mjerenja.csv");
+		File neighboursFile = main.getFileFromResources("neighbours.json");
+		File measurmentsFile = main.getFileFromResources("mjerenja.csv");
 		try (BufferedReader br = new BufferedReader(new FileReader(measurmentsFile))){
 			String line;
 			while ((line = br.readLine()) != null) {
 				measurments.add(line);
-				System.out.println(line);
+				//System.out.println(line);
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -43,7 +52,7 @@ public class Main {
 		
 		Scanner scan = new Scanner(System.in);  // Create a Scanner object
 	    System.out.println("Enter port:");
-	    port = scan.nextInt();
+	    main.setPort(scan.nextInt()); 
 	    scan.close();
 	    ip = "localhost";
 		
@@ -52,22 +61,20 @@ public class Main {
 			String jsonData = new String(Files.readAllBytes(neighboursFile.toPath()));
 			//System.out.println(jsonData.toString());
 			neighbours = objectMapper.readValue(jsonData, new TypeReference<List<Neighbour>>(){});
-			Neighbour thisSensor = new Neighbour(ip, port);
+			Neighbour thisSensor = new Neighbour(ip, main.getPort());
 			//addSensor(thisSensor, neighboursFile);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
 		
-		Server server = new Server();
+		Server server = new Server(main.getPort());
 		Thread t1 = new Thread(server, "t1");
 		t1.start();
-		Client client = new Client(measurments, neighbours, clock);
+		Client client = new Client(/*measurments, neighbours,*/ clock, main.getPort());
 		Thread t2 = new Thread(client, "t2");
 		try {
-			Thread.sleep(30000);
+			Thread.sleep(10000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		t2.start();
@@ -77,12 +84,9 @@ public class Main {
 
         ClassLoader classLoader = getClass().getClassLoader();
 
-        String resource = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\RASSUS-dz2\\sensorReadings\\target\\classes\\neighbours.json";
-        if (resource == null) {
-            throw new IllegalArgumentException("file is not found!");
-        } else {
-            return new File(resource);
-        }
+        //String resource = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\RASSUS-dz2\\sensorReadings\\target\\classes\\neighbours.json";
+        URL resource = classLoader.getResource(fileName);
+        return new File(resource.getFile());
 
     }
 	
@@ -102,6 +106,14 @@ public class Main {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 }

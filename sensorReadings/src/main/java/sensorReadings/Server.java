@@ -7,10 +7,10 @@ import java.net.SocketException;
 
 public class Server implements Runnable {
 	
-	static final int PORT = 10001; // server port
+	private int port;
 	
-	public Server() {
-		
+	public Server(int port) {
+		this.port = port;
 	}
 
 	public void run() {
@@ -22,7 +22,7 @@ public class Server implements Runnable {
         // host
         DatagramSocket socket = null;
 		try {
-			socket = new SimpleSimulatedDatagramSocket(PORT, 0.2, 1000);
+			socket = new SimpleSimulatedDatagramSocket(port, 0.2, 1000);
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -48,12 +48,12 @@ public class Server implements Runnable {
             // using the platform's default charset
             rcvStr = new String(packet.getData(), packet.getOffset(),
                     packet.getLength());
-            System.out.println("Server (" + PORT + ") received: " + rcvStr);
+            System.out.println("Server (" + port + ") received: " + rcvStr);
 
             // encode a String into a sequence of bytes using the platform's
             // default charset
             sendBuf = rcvStr.toUpperCase().getBytes();
-            System.out.println("Server (" + PORT + ") sends: " + rcvStr.toUpperCase());
+            System.out.println("Server (" + port + ") sends: " + rcvStr.toUpperCase());
 
             // create a DatagramPacket for sending packets
             DatagramPacket sendPacket = new DatagramPacket(sendBuf,
