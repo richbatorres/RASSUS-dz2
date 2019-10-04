@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import sensorReadings.Measurment;
 import sensorReadings.Neighbour;
+import sensorReadings.SortByVector;
 
 public class Test {
 
@@ -48,11 +49,28 @@ public class Test {
 //    } 
 	
 	public static void main(String[] args) {
-		String PORT_REGEX = "^\\d*$";
+		List<Measurment> rcvMeasurments = new ArrayList<Measurment>();
+		String mj1 = "31,31,31,31;250;5,1,3";
+		String mj2 = "31,31,31,31;250;5,7,3";
+		String mj3 = "31,31,31,31;250;5,5,3";
+		String mj4 = "31,31,31,31;250;5,3,3";
 		
-		if ("53333".matches(PORT_REGEX)) {
-			System.out.println("uspeeeh");
-		}else System.out.println("neuspeeeh");
+		Measurment m1 = new Measurment(mj1);		
+		Measurment m2 = new Measurment(mj2);
+		Measurment m3 = new Measurment(mj3);
+		Measurment m4 = new Measurment(mj4);
+		rcvMeasurments.add(m1);
+		rcvMeasurments.add(m2);
+		rcvMeasurments.add(m3);
+		rcvMeasurments.add(m4);
+		Measurment[] ms = new Measurment[rcvMeasurments.size()];
+		ms = rcvMeasurments.toArray(ms);
+		Arrays.sort(ms, new SortByVector(0));
+		
+		rcvMeasurments = Arrays.asList(ms);
+		for (Measurment m : rcvMeasurments) {
+			System.out.println(m.toString());
+		}
 
 	}
 

@@ -103,7 +103,6 @@ public class Client implements Runnable {
         	StringBuffer receiveString = new StringBuffer();
         	// create a datagram packet for receiving data
         	DatagramPacket rcvPacket = new DatagramPacket(rcvBuf, rcvBuf.length);
-        	socket.set
         	try {
         		// receive a datagram packet from this socket
         		socket.receive(rcvPacket); //RECVFROM

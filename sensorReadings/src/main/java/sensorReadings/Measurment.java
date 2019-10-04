@@ -41,6 +41,29 @@ public class Measurment {
 		return returnString;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (sTimestamp ^ (sTimestamp >>> 32));
+		result = prime * result + ((vTimestamp == null) ? 0 : vTimestamp.hashCode());
+		result = prime * result + ((values == null) ? 0 : values.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Measurment other = (Measurment) obj;
+		if (other.toString().equals(this.toString())) return true;
+		else return false;
+	}
+
 	public long getsTimestamp() {
 		return sTimestamp;
 	}
