@@ -13,6 +13,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ public class MainTwo {
 	private int port;
 	EmulatedSystemClock clock;
 	private int positionInVTimestamp;
+	
+	private final static int VALUES_SIZE = 6;
 
 	public static void main(String[] args) {		
 		MainTwo main = new MainTwo();
@@ -67,11 +70,12 @@ public class MainTwo {
 			//System.out.println(jsonData.toString());
 			neighbours = objectMapper.readValue(jsonData, new TypeReference<List<Neighbour>>(){});
 			Neighbour thisSensor = new Neighbour(ip, main.getPort());
-			//addSensor(thisSensor, neighboursFile);
+			addSensor(thisSensor, neighboursFile);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		main.positionInVTimestamp = neighbours.size();
+		main.vTimestamp.put(main.port, 0);
 		
 		MainTwo.Server server = main.new Server();
 		Thread t1 = new Thread(server, "t1");
@@ -92,7 +96,9 @@ public class MainTwo {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			printSortedMeasurments();
+			printSortedMeasurments(main.rcvMeasurments, main.positionInVTimestamp);
+			printAverageValues(main.rcvMeasurments);
+			main.rcvMeasurments.clear();
 		}
 		
 	}
@@ -129,7 +135,7 @@ public class MainTwo {
 
 			while (run) {
 
-				String sendString = prepareSendingString();
+				String sendString = prepareSendingString(port);
 
 				System.out.print("Client (" + port + ") sends: ");
 				// send each character as a separate datagram packet
@@ -292,9 +298,10 @@ public class MainTwo {
 		}		
 	}
 	
-	public String prepareSendingString() {
+	public String prepareSendingString(int port) {
 		int redniBroj = (int) (((clock.currentTimeMillis()/1000) % 100) + 2);
     	String sendString = MainTwo.measurmentsGenerator.get(redniBroj);
+    	sendString = sendString.substring(0, sendString.length()-1);
     	sendString += Measurment.SECTION_DELIMITER + clock.currentTimeMillis() + Measurment.SECTION_DELIMITER;
     	vTimestamp.replace(port, vTimestamp.get(port)+1);
     	for (Map.Entry<Integer, Integer> entry : vTimestamp.entrySet()) {
@@ -304,8 +311,41 @@ public class MainTwo {
     	return sendString;
 	}
 	
-	private static void printSortedMeasurments() {
-				
+	private static void printSortedMeasurments(List<Measurment> rcvMeasurments, int positionInVTimestamp) {
+		System.out.println("Sorted measurments by scalar values:");
+		Collections.sort(rcvMeasurments, new SortByScalar());
+		for (Measurment m : rcvMeasurments) {
+			System.out.println(m.toString());
+		}
+		System.out.println("\n------------------------------------------\n");
+		System.out.println("Sorted measurments by vector values:");
+		Collections.sort(rcvMeasurments, new SortByVector(positionInVTimestamp));
+		for (Measurment m : rcvMeasurments) {
+			System.out.println(m.toString());
+		}
+		System.out.println("\n------------------------------------------\n");
+	}
+
+	private static void printAverageValues(List<Measurment> rcvMeasurments) {
+//		List<Integer> finalValues = new ArrayList<Integer>();
+		int[] finalValues = {0, 0, 0, 0, 0, 0};
+		int[] antiZeros = {0, 0, 0, 0, 0, 0};
+		for (Measurment m : rcvMeasurments) {
+			for (int i=0; i<VALUES_SIZE; i++) {
+				if (m.getValues().get(i) != 0) {
+					finalValues[i] += m.getValues().get(i);
+					antiZeros[i]++;
+				}
+			}
+		}
+		System.out.println("Average values from the last 5 seconds are:");
+		for (int i=0; i<4; i++) {
+			finalValues[i] = finalValues[i]/antiZeros[i];
+			System.out.println(finalValues[i]);
+		}
+		System.out.println("\n------------------------------------------\n");
+		System.out.println("\n------------------------------------------\n");
+		System.out.println("\n------------------------------------------\n");
 	}
 	
 	public int getPort() {

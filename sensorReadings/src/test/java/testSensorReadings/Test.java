@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import sensorReadings.Measurment;
 import sensorReadings.Neighbour;
+import sensorReadings.SortByScalar;
 import sensorReadings.SortByVector;
 
 public class Test {
@@ -50,27 +52,37 @@ public class Test {
 	
 	public static void main(String[] args) {
 		List<Measurment> rcvMeasurments = new ArrayList<Measurment>();
-		String mj1 = "31,31,31,31;250;5,1,3";
-		String mj2 = "31,31,31,31;250;5,7,3";
-		String mj3 = "31,31,31,31;250;5,5,3";
-		String mj4 = "31,31,31,31;250;5,3,3";
+		String mj1 = "30,15,,31;250;5,152,3";
+		String mj2 = "40,10,,31;240;5,2003,3";
+		String mj3 = ",5,8,31;220;5,533,3";
+		String mj4 = "50,,10,31;230;5,241,3";
 		
-		Measurment m1 = new Measurment(mj1);		
+		Measurment m1 = new Measurment(mj1);
 		Measurment m2 = new Measurment(mj2);
 		Measurment m3 = new Measurment(mj3);
 		Measurment m4 = new Measurment(mj4);
+		
 		rcvMeasurments.add(m1);
 		rcvMeasurments.add(m2);
 		rcvMeasurments.add(m3);
 		rcvMeasurments.add(m4);
-		Measurment[] ms = new Measurment[rcvMeasurments.size()];
-		ms = rcvMeasurments.toArray(ms);
-		Arrays.sort(ms, new SortByVector(0));
-		
-		rcvMeasurments = Arrays.asList(ms);
+				
+		int[] finalValues = {0, 0, 0, 0};
+		int[] antiZeros = {0, 0, 0, 0};
 		for (Measurment m : rcvMeasurments) {
-			System.out.println(m.toString());
+			for (int i=0; i<4; i++) {
+				if (m.getValues().get(i) != 0) {
+					finalValues[i] += m.getValues().get(i);
+					antiZeros[i]++;
+				}
+			}
 		}
+		System.out.println("Average values from the last 5 seconds are:");
+		for (int i=0; i<4; i++) {
+			finalValues[i] = finalValues[i]/antiZeros[i];
+			System.out.println(finalValues[i]);
+		}
+		
 
 	}
 
