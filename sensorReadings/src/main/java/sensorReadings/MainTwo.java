@@ -13,13 +13,12 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-
-import javax.swing.text.Position;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,15 +36,15 @@ public class MainTwo {
 	EmulatedSystemClock clock;
 	private int positionInVTimestamp;
 	
-	private final static int VALUES_SIZE = 6;
+	public final static int CO_POSITION = 3;
 
 	public static void main(String[] args) {		
 		MainTwo main = new MainTwo();
 		main.clock = new EmulatedSystemClock();
-		//File neighboursFile = new File("C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\neighbours.json"); 
-		//File measurmentsFile = new File("C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\mjerenja.csv");
-		File neighboursFile = main.getFileFromResources("neighbours.json");
-		File measurmentsFile = main.getFileFromResources("mjerenja.csv");
+		File neighboursFile = new File("C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\neighbours.json"); 
+		File measurmentsFile = new File("C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\mjerenja.csv");
+//		File neighboursFile = main.getFileFromResources("neighbours.json");
+//		File measurmentsFile = main.getFileFromResources("mjerenja.csv");
 		
 		try (BufferedReader br = new BufferedReader(new FileReader(measurmentsFile))){
 			String line;
@@ -74,9 +73,10 @@ public class MainTwo {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		main.positionInVTimestamp = neighbours.size();
-		main.vTimestamp.put(main.port, 0);
-		
+		main.positionInVTimestamp = neighbours.size()-1;
+		for (Neighbour n : neighbours) {
+			main.vTimestamp.put(n.getPort(), 0);
+		}
 		MainTwo.Server server = main.new Server();
 		Thread t1 = new Thread(server, "t1");
 		t1.start();
@@ -93,8 +93,10 @@ public class MainTwo {
 			try {
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
+			}
+			for (Neighbour n : neighbours) {
+				if (main.vTimestamp.containsKey(n.getPort())) main.vTimestamp.put(n.getPort(), 0);
 			}
 			printSortedMeasurments(main.rcvMeasurments, main.positionInVTimestamp);
 			printAverageValues(main.rcvMeasurments);
@@ -137,8 +139,7 @@ public class MainTwo {
 
 				String sendString = prepareSendingString(port);
 
-				System.out.print("Client (" + port + ") sends: ");
-				// send each character as a separate datagram packet
+				//System.out.print(clock.currentTimeMillis()/1000 + ": Client (" + port + ") sends: ");
 				byte[] sendBuf = sendString.getBytes();// sent bytes
 
 				// create a datagram packet for sending data
@@ -148,6 +149,8 @@ public class MainTwo {
 						packet = new DatagramPacket(sendBuf, sendBuf.length, address, n.getPort());
 						// send a datagram packet from this socket
 						try {
+							//System.out.print(clock.currentTimeMillis()/1000 + ": Client (" + port + ") sends to "
+									//+ packet.getPort() + ": " + new String(packet.getData()) + "\n");
 							socket.send(packet);
 						} catch (IOException e) {
 
@@ -155,7 +158,7 @@ public class MainTwo {
 						} //SENDTO
 					}
 				}
-				System.out.print(new String(sendBuf));
+				//System.out.print(new String(sendBuf) + "\n");
 				for (int i = 0; i < 10; i++) {
 					try {
 						Thread.sleep(100);
@@ -239,7 +242,7 @@ public class MainTwo {
 	            // using the platform's default charset
 	            rcvStr = new String(packet.getData(), packet.getOffset(),
 	                    packet.getLength());
-	            System.out.println("Server (" + port + ") received: " + rcvStr);
+//	            System.out.println(clock.currentTimeMillis()/1000 + ": Server (" + port + ") received: " + rcvStr);
 	            
 	            if (rcvStr.matches(PORT_REGEX)) {
 	            	confirmations.add(Integer.parseInt(rcvStr));
@@ -247,11 +250,13 @@ public class MainTwo {
 	            	Measurment measurment = new Measurment(rcvStr);
 	            	if (!rcvMeasurments.contains(measurment)) {
 						rcvMeasurments.add(measurment);
+						DODAT UPDATE VTIMESTAMPAAAAAAAAAAAAAAAAAAAAA
 						//confirmations.add(port);
 						// encode a String into a sequence of bytes using the platform's
 						// default charset
 						sendBuf = Integer.toString(port).getBytes();
-						System.out.println("Server (" + port + ") sends: " + sendBuf.toString());
+//						System.out.println(clock.currentTimeMillis()/1000 + 
+//								": Server (" + port + ") sends: " + new String(sendBuf));
 						// create a DatagramPacket for sending packets
 						DatagramPacket sendPacket = new DatagramPacket(sendBuf, sendBuf.length, packet.getAddress(),
 								packet.getPort());
@@ -300,8 +305,8 @@ public class MainTwo {
 	
 	public String prepareSendingString(int port) {
 		int redniBroj = (int) (((clock.currentTimeMillis()/1000) % 100) + 2);
-    	String sendString = MainTwo.measurmentsGenerator.get(redniBroj);
-    	sendString = sendString.substring(0, sendString.length()-1);
+    	String sendString = MainTwo.measurmentsGenerator.get(redniBroj).split(Measurment.VECTOR_DELIMITER)[CO_POSITION];
+    	if (sendString.equals("")) sendString = "0";
     	sendString += Measurment.SECTION_DELIMITER + clock.currentTimeMillis() + Measurment.SECTION_DELIMITER;
     	vTimestamp.replace(port, vTimestamp.get(port)+1);
     	for (Map.Entry<Integer, Integer> entry : vTimestamp.entrySet()) {
@@ -328,21 +333,17 @@ public class MainTwo {
 
 	private static void printAverageValues(List<Measurment> rcvMeasurments) {
 //		List<Integer> finalValues = new ArrayList<Integer>();
-		int[] finalValues = {0, 0, 0, 0, 0, 0};
-		int[] antiZeros = {0, 0, 0, 0, 0, 0};
+		int finalValue = 0;
+		int antiZeros = 0;
 		for (Measurment m : rcvMeasurments) {
-			for (int i=0; i<VALUES_SIZE; i++) {
-				if (m.getValues().get(i) != 0) {
-					finalValues[i] += m.getValues().get(i);
-					antiZeros[i]++;
-				}
+			if (m.getValue() != 0) {
+				finalValue += m.getValue();
+				antiZeros++;
 			}
 		}
 		System.out.println("Average values from the last 5 seconds are:");
-		for (int i=0; i<4; i++) {
-			finalValues[i] = finalValues[i]/antiZeros[i];
-			System.out.println(finalValues[i]);
-		}
+		if (antiZeros != 0) finalValue = finalValue / antiZeros;
+			System.out.println(finalValue);
 		System.out.println("\n------------------------------------------\n");
 		System.out.println("\n------------------------------------------\n");
 		System.out.println("\n------------------------------------------\n");
