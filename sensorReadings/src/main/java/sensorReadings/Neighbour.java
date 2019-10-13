@@ -3,9 +3,9 @@ package sensorReadings;
 public class Neighbour {
 
 	private String ip;
-	private int port;
+	private long port;
 	
-	public Neighbour(String ip, int port) {
+	public Neighbour(String ip, long port) {
 		super();
 		this.ip = ip;
 		this.port = port;
@@ -22,7 +22,7 @@ public class Neighbour {
 		this.ip = ip;
 	}
 
-	public int getPort() {
+	public long getPort() {
 		return port;
 	}
 

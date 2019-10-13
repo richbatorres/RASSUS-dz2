@@ -14,9 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import sensorReadings.Client;
 import sensorReadings.EmulatedSystemClock;
 import sensorReadings.Neighbour;
@@ -55,17 +52,17 @@ public class Main {
 	    main.setPort(scan.nextInt()); 
 	    scan.close();
 	    ip = "localhost";
-		
-		ObjectMapper objectMapper = new ObjectMapper();
-		try {
-			String jsonData = new String(Files.readAllBytes(neighboursFile.toPath()));
-			//System.out.println(jsonData.toString());
-			neighbours = objectMapper.readValue(jsonData, new TypeReference<List<Neighbour>>(){});
-			Neighbour thisSensor = new Neighbour(ip, main.getPort());
-			//addSensor(thisSensor, neighboursFile);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}		
+//		
+//		ObjectMapper objectMapper = new ObjectMapper();
+//		try {
+//			String jsonData = new String(Files.readAllBytes(neighboursFile.toPath()));
+//			//System.out.println(jsonData.toString());
+//			neighbours = objectMapper.readValue(jsonData, new TypeReference<List<Neighbour>>(){});
+//			Neighbour thisSensor = new Neighbour(ip, main.getPort());
+//			//addSensor(thisSensor, neighboursFile);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}		
 		
 		Server server = new Server(main.getPort());
 		Thread t1 = new Thread(server, "t1");

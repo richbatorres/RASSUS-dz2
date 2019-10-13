@@ -34,7 +34,7 @@ public class Client implements Runnable {
 	public void run() {
 		Map<Integer, Integer> vTimestamp = new LinkedHashMap<Integer, Integer>();
 		for (Neighbour n : Main.neighbours) {
-			vTimestamp.put(n.getPort(), 0);
+			vTimestamp.put(Math.toIntExact(n.getPort()), 0);
 		}
 		byte[] rcvBuf = new byte[256]; // received bytes
 
@@ -88,7 +88,7 @@ public class Client implements Runnable {
         	DatagramPacket packet;
         	for (Neighbour n : Main.neighbours) {
         		if (n.getPort() != port) {
-        			packet = new DatagramPacket(sendBuf, sendBuf.length, address, n.getPort());
+        			packet = new DatagramPacket(sendBuf, sendBuf.length, address, Math.toIntExact(n.getPort()));
         			// send a datagram packet from this socket
         			try {
         				socket.send(packet);
