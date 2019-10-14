@@ -6,6 +6,7 @@
   <name>Sensor Readings</name>
   <description>project that simulates peer-to-peer network of sensors which share measured data</description>
   <dependencies>
+<<<<<<< HEAD
 <!--   	<dependency> -->
 <!-- 		<groupId>com.fasterxml.jackson.core</groupId> -->
 <!-- 		<artifactId>jackson-databind</artifactId> -->
@@ -16,5 +17,17 @@
     		<artifactId>json-simple</artifactId>
     		<version>1.1.1</version>
 		</dependency>
+=======
+  	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-databind</artifactId>
+		<version>2.2.3</version>
+	</dependency>
+	<dependency>
+    	<groupId>com.googlecode.json-simple</groupId>
+    	<artifactId>json-simple</artifactId>
+    	<version>1.1.1</version>
+	</dependency>
+>>>>>>> 9a17e0f308a5f25957a1eb5ed96e0ec2e415ef95
   </dependencies>
 </project>
