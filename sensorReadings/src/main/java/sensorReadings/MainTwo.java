@@ -9,7 +9,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -36,14 +35,18 @@ public class MainTwo {
 	private static String ip;
 	private int port;
 	EmulatedSystemClock clock;
-	private int positionInVTimestamp;
+//	private int positionInVTimestamp;
 	
 	public final static int CO_POSITION = 3;
 	
-	public final static String NEIGHBOURS_FILE_PATH = "D:\\Documents\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\neighbours.json";
-	public final static String MEASURMENTS_FILE_PATH = "D:\\Documents\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\mjerenja.csv";
-//	public final static String NEIGHBOURS_FILE_PATH = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\neighbours.json";
-//	public final static String MEASURMENTS_FILE_PATH = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\target\\classes\\mjerenja.csv";
+//	public final static String NEIGHBOURS_FILE_PATH = "D:\\Documents\\kolegiji"
+//			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\neighbours.json";
+//	public final static String MEASURMENTS_FILE_PATH = "D:\\Documents\\kolegiji"
+//			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\mjerenja.csv";
+	public final static String NEIGHBOURS_FILE_PATH = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji"
+			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\neighbours.json";
+	public final static String MEASURMENTS_FILE_PATH = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji"
+			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\mjerenja.csv";
 
 	public static void main(String[] args) {		
 		MainTwo main = new MainTwo();
@@ -67,18 +70,19 @@ public class MainTwo {
 	    main.setPort(scan.nextInt()); 
 	    scan.close();
 	    ip = "localhost";
-	    Neighbour sensor = new Neighbour(ip, main.port);
+	    updateNeighbours(main.neighbours, neighboursFile);
+	    Neighbour sensor = new Neighbour(ip, main.port, main.neighbours.size());
 	    
 	    try {
 			addSensor(sensor, main.neighbours, neighboursFile);
 		} catch (ParseException e1) {
-			// TODO Auto-generated catch block
+			
 			e1.printStackTrace();
 		}	    
 	    
-		main.positionInVTimestamp = main.neighbours.size()-1;
+//		main.positionInVTimestamp = main.neighbours.size()-1;
 		for (Neighbour n : main.neighbours) {
-			main.vTimestamp.put(Math.toIntExact(n.getPort()), 0);
+			main.vTimestamp.put(n.getPositionInVTimestamp(), 0);
 		}
 		MainTwo.Server server = main.new Server();
 		Thread t1 = new Thread(server, "t1");
@@ -86,7 +90,7 @@ public class MainTwo {
 		MainTwo.Client client = main.new Client();
 		Thread t2 = new Thread(client, "t2");
 		try {
-			Thread.sleep(10000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -94,15 +98,16 @@ public class MainTwo {
 		
 		while (true) {
 			try {
-				Thread.sleep(5000);
+				Thread.sleep(50000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 			updateNeighbours(main.neighbours, neighboursFile);
 			for (Neighbour n : main.neighbours) {
-				if (!main.vTimestamp.containsKey(n.getPort())) main.vTimestamp.put(Math.toIntExact(n.getPort()), 0);
+				if (!main.vTimestamp.containsKey(n.getPositionInVTimestamp())) 
+					main.vTimestamp.put(n.getPositionInVTimestamp(), 0);
 			}
-			printSortedMeasurments(main.rcvMeasurments, main.positionInVTimestamp);
+			printSortedMeasurments(main.rcvMeasurments, sensor.getPositionInVTimestamp());
 			printAverageValues(main.rcvMeasurments);
 			main.rcvMeasurments.clear();
 		}
@@ -143,7 +148,7 @@ public class MainTwo {
 
 				String sendString = prepareSendingString(port);
 
-//				System.out.print(clock.currentTimeMillis()/1000 + ": Client (" + port + ") sends: ");
+//				System.out.println(clock.currentTimeMillis()/1000 + ": Client (" + port + ") sends: ");
 				byte[] sendBuf = sendString.getBytes();// sent bytes
 
 				// create a datagram packet for sending data
@@ -153,8 +158,8 @@ public class MainTwo {
 						packet = new DatagramPacket(sendBuf, sendBuf.length, address, Math.toIntExact(n.getPort()));
 						// send a datagram packet from this socket
 						try {
-							System.out.print(clock.currentTimeMillis()/1000 + ": Client (" + port + ") sends to "
-									+ packet.getPort() + ": " + new String(packet.getData()) + "\n");
+//							System.out.println(clock.currentTimeMillis()/1000 + ": Client (" + port + ") sends to "
+//									+ packet.getPort() + ": " + new String(packet.getData()));
 							socket.send(packet);
 						} catch (IOException e) {
 
@@ -162,7 +167,7 @@ public class MainTwo {
 						} //SENDTO
 					}
 				}
-				//System.out.print(new String(sendBuf) + "\n");
+				//System.out.println(new String(sendBuf));
 				for (int i = 0; i < 10; i++) {
 					try {
 						Thread.sleep(100);
@@ -172,7 +177,7 @@ public class MainTwo {
 					}
 					for (Neighbour n : neighbours) {
 						if (n.getPort() != port) {
-							if (!confirmations.contains(n.getPort())) {
+							if (!confirmations.contains(Math.toIntExact(n.getPort()))) {
 								packet = new DatagramPacket(sendBuf, sendBuf.length, address, Math.toIntExact(n.getPort()));
 								// send a datagram packet from this socket
 								try {
@@ -229,7 +234,7 @@ public class MainTwo {
 	            // using the platform's default charset
 	            rcvStr = new String(packet.getData(), packet.getOffset(),
 	                    packet.getLength());
-	            System.out.println(clock.currentTimeMillis()/1000 + ": Server (" + port + ") received: " + rcvStr);
+//	            System.out.println(clock.currentTimeMillis()/1000 + ": Server (" + port + ") received: " + rcvStr);
 	            
 	            if (rcvStr.matches(PORT_REGEX)) {
 	            	confirmations.add(Integer.parseInt(rcvStr));
@@ -237,13 +242,19 @@ public class MainTwo {
 	            	Measurment measurment = new Measurment(rcvStr);
 	            	if (!rcvMeasurments.contains(measurment)) {
 						rcvMeasurments.add(measurment);
-						vTimestamp.replace(port, vTimestamp.get(port)+1);
+						for (Neighbour n : neighbours) {
+							if (n.getPort() == port) {
+								vTimestamp.replace(n.getPositionInVTimestamp(), 
+										vTimestamp.get(n.getPositionInVTimestamp() + 1));
+								break;
+							}
+						}
 						//confirmations.add(port);
 						// encode a String into a sequence of bytes using the platform's
 						// default charset
 						sendBuf = Integer.toString(port).getBytes();
-						System.out.println(clock.currentTimeMillis()/1000 + 
-								": Server (" + port + ") sends: " + new String(sendBuf));
+//						System.out.println(clock.currentTimeMillis()/1000 + 
+//								": Server (" + port + ") sends: " + new String(sendBuf));
 						// create a DatagramPacket for sending packets
 						DatagramPacket sendPacket = new DatagramPacket(sendBuf, sendBuf.length, packet.getAddress(),
 								packet.getPort());
@@ -272,16 +283,15 @@ public class MainTwo {
 			JSONObject jo = new JSONObject();
 			jo.put("ip", sensor.getIp());
 			jo.put("port", sensor.getPort());
-			sensorList.add(jo);
-//			System.out.println(sensorList.toJSONString());
-//			sensorList = (JSONArray) neighbours;			
+			jo.put("position", sensor.getPositionInVTimestamp());
+			sensorList.add(jo);						
 		} catch (IOException e) {
 			e.printStackTrace();
 		}try(FileWriter file = new FileWriter(neighboursFile, false)){
 			file.write(sensorList.toJSONString());
             file.flush();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		}
 	}
@@ -300,9 +310,10 @@ public class MainTwo {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ParseException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		}
+		neighbours.size();
 	}
 
 	public String prepareSendingString(int port) {
@@ -310,7 +321,13 @@ public class MainTwo {
     	String sendString = MainTwo.measurmentsGenerator.get(redniBroj).split(Measurment.VECTOR_DELIMITER)[CO_POSITION];
     	if (sendString.equals("")) sendString = "0";
     	sendString += Measurment.SECTION_DELIMITER + clock.currentTimeMillis() + Measurment.SECTION_DELIMITER;
-    	vTimestamp.replace(port, vTimestamp.get(port)+1);
+    	for (Neighbour n : neighbours) {
+			if (((Long)n.getPort()).intValue() == port) {
+				vTimestamp.replace(n.getPositionInVTimestamp(), 
+						vTimestamp.get(n.getPositionInVTimestamp()) + 1);
+				break;
+			}
+		}
     	for (Map.Entry<Integer, Integer> entry : vTimestamp.entrySet()) {
     		sendString += entry.getValue() + Measurment.VECTOR_DELIMITER;
     	}
@@ -323,7 +340,8 @@ public class MainTwo {
 	private static Neighbour parse(JSONObject o) {
 		String ip = (String) o.get("ip");
 		long port = (long) o.get("port");
-		Neighbour n = new Neighbour(ip, port);
+		int positionInVTimestamp = ((Long)o.get("position")).intValue();
+		Neighbour n = new Neighbour(ip, port, positionInVTimestamp);
 		return n;
 	}
 	
@@ -333,13 +351,13 @@ public class MainTwo {
 		for (Measurment m : rcvMeasurments) {
 			System.out.println(m.toString());
 		}
-		System.out.println("\n------------------------------------------\n");
+		System.out.println("\n------------------------------------------");
 		System.out.println("Sorted measurments by vector values:");
 		Collections.sort(rcvMeasurments, new SortByVector(positionInVTimestamp));
 		for (Measurment m : rcvMeasurments) {
 			System.out.println(m.toString());
 		}
-		System.out.println("\n------------------------------------------\n");
+		System.out.println("\n------------------------------------------");
 	}
 
 	private static void printAverageValues(List<Measurment> rcvMeasurments) {
@@ -355,9 +373,9 @@ public class MainTwo {
 		System.out.println("Average values from the last 5 seconds are:");
 		if (antiZeros != 0) finalValue = finalValue / antiZeros;
 			System.out.println(finalValue);
-		System.out.println("\n------------------------------------------\n");
-		System.out.println("\n------------------------------------------\n");
-		System.out.println("\n------------------------------------------\n");
+		System.out.println("\n------------------------------------------");
+		System.out.println("\n------------------------------------------");
+		System.out.println("\n------------------------------------------");
 	}
 	
 	public int getPort() {

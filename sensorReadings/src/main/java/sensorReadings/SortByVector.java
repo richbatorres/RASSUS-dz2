@@ -14,7 +14,7 @@ public class SortByVector implements Comparator<Measurment>{
 
 
 	public int compare(Measurment m1, Measurment m2) {
-		return m1.getvTimestamp().get(position) - m2.getvTimestamp().get(position);
+		return m2.getvTimestamp().get(position) - m1.getvTimestamp().get(position);
 	}
 
 }

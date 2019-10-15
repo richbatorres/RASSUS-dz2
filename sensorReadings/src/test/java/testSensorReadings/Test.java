@@ -60,8 +60,8 @@ public class Test {
 			e1.printStackTrace();
 		}
 		
-		Neighbour n1 = new Neighbour("localhost", 54444);
-		Neighbour n2 = new Neighbour("localhost", 55555);
+		Neighbour n1 = new Neighbour("localhost", 54444, 0);
+		Neighbour n2 = new Neighbour("localhost", 55555, 1);
 		
 		JSONObject s1 = new JSONObject();
 		s1.put("ip", n1.getIp());
@@ -96,7 +96,8 @@ public class Test {
 	private static Neighbour parse(JSONObject o) {
 		String ip = (String) o.get("ip");
 		long port = (long) o.get("port");
-		Neighbour n = new Neighbour(ip, port);
+		int position = (int) o.get("position");
+		Neighbour n = new Neighbour(ip, port, position);
 		return n;
 	}
 
