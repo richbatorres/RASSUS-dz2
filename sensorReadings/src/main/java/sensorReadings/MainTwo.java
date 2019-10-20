@@ -10,9 +10,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,14 +37,14 @@ public class MainTwo {
 	
 	public final static int CO_POSITION = 3;
 	
-//	public final static String NEIGHBOURS_FILE_PATH = "D:\\Documents\\kolegiji"
-//			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\neighbours.json";
-//	public final static String MEASURMENTS_FILE_PATH = "D:\\Documents\\kolegiji"
-//			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\mjerenja.csv";
-	public final static String NEIGHBOURS_FILE_PATH = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji"
+	public final static String NEIGHBOURS_FILE_PATH = "D:\\Documents\\kolegiji"
 			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\neighbours.json";
-	public final static String MEASURMENTS_FILE_PATH = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji"
+	public final static String MEASURMENTS_FILE_PATH = "D:\\Documents\\kolegiji"
 			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\mjerenja.csv";
+//	public final static String NEIGHBOURS_FILE_PATH = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji"
+//			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\neighbours.json";
+//	public final static String MEASURMENTS_FILE_PATH = "C:\\Users\\ebrctnx\\OneDrive - fer.hr\\kolegiji"
+//			+ "\\RASSUS\\DZ\\DZ2\\RASSUS-dz2\\sensorReadings\\src\\main\\resources\\mjerenja.csv";
 
 	public static void main(String[] args) {		
 		MainTwo main = new MainTwo();
@@ -70,7 +68,7 @@ public class MainTwo {
 	    main.setPort(scan.nextInt()); 
 	    scan.close();
 	    ip = "localhost";
-	    updateNeighbours(main.neighbours, neighboursFile);
+	    updateNeighbours(main.neighbours, neighboursFile, main.vTimestamp);
 	    Neighbour sensor = new Neighbour(ip, main.port, main.neighbours.size());
 	    
 	    try {
@@ -82,13 +80,14 @@ public class MainTwo {
 	    
 //		main.positionInVTimestamp = main.neighbours.size()-1;
 		for (Neighbour n : main.neighbours) {
-			main.vTimestamp.put(n.getPositionInVTimestamp(), 0);
+			if (!main.vTimestamp.containsKey(n.getPositionInVTimestamp()))
+				main.vTimestamp.put(n.getPositionInVTimestamp(), 0);
 		}
 		MainTwo.Server server = main.new Server();
-		Thread t1 = new Thread(server, "t1");
+		Thread t1 = new Thread(server, "server");
 		t1.start();
 		MainTwo.Client client = main.new Client();
-		Thread t2 = new Thread(client, "t2");
+		Thread t2 = new Thread(client, "client");
 		try {
 			Thread.sleep(5000);
 		} catch (InterruptedException e) {
@@ -98,16 +97,19 @@ public class MainTwo {
 		
 		while (true) {
 			try {
-				Thread.sleep(50000);
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			updateNeighbours(main.neighbours, neighboursFile);
+			updateNeighbours(main.neighbours, neighboursFile, main.vTimestamp);
+			
 			for (Neighbour n : main.neighbours) {
-				if (!main.vTimestamp.containsKey(n.getPositionInVTimestamp())) 
-					main.vTimestamp.put(n.getPositionInVTimestamp(), 0);
+				if (n.getPort() == main.port) {
+					printSortedMeasurments(main.rcvMeasurments, n.getPositionInVTimestamp());
+					break;
+				}
 			}
-			printSortedMeasurments(main.rcvMeasurments, sensor.getPositionInVTimestamp());
+//			printSortedMeasurments(main.rcvMeasurments, sensor.getPositionInVTimestamp());
 			printAverageValues(main.rcvMeasurments);
 			main.rcvMeasurments.clear();
 		}
@@ -240,15 +242,27 @@ public class MainTwo {
 	            	confirmations.add(Integer.parseInt(rcvStr));
 	            }else {
 	            	Measurment measurment = new Measurment(rcvStr);
-	            	if (!rcvMeasurments.contains(measurment)) {
-						rcvMeasurments.add(measurment);
+//	            	for (Neighbour n : neighbours) {
+//						if (n.getPort() == port) {
+//			            	measurment.getvTimestamp().set(n.getPositionInVTimestamp(),
+//			            			measurment.getvTimestamp().get(n.getPositionInVTimestamp()) + 1);
+//							break;
+//						}
+//					}
+	            	if (!rcvMeasurments.contains(measurment)) {						
 						for (Neighbour n : neighbours) {
 							if (n.getPort() == port) {
 								vTimestamp.replace(n.getPositionInVTimestamp(), 
-										vTimestamp.get(n.getPositionInVTimestamp() + 1));
+										vTimestamp.get(n.getPositionInVTimestamp()) + 1);
+								if (measurment.getvTimestamp().size() > n.getPositionInVTimestamp()) {
+									measurment.getvTimestamp().set(n.getPositionInVTimestamp(),
+											vTimestamp.get(n.getPositionInVTimestamp()));
+									rcvMeasurments.add(measurment);
+								}
 								break;
 							}
 						}
+						
 						//confirmations.add(port);
 						// encode a String into a sequence of bytes using the platform's
 						// default charset
@@ -275,7 +289,7 @@ public class MainTwo {
 	public static void addSensor(Neighbour sensor, List<Neighbour> neighbours, File neighboursFile) throws ParseException {
 		JSONParser jsonParser = new JSONParser();
 		JSONArray sensorList = null;
-		updateNeighbours(neighbours, neighboursFile);
+		//updateNeighbours(neighbours, neighboursFile);
 		try (FileReader reader = new FileReader(neighboursFile)){
 			Object obj = jsonParser.parse(reader);
 			sensorList = (JSONArray) obj;
@@ -296,7 +310,7 @@ public class MainTwo {
 		}
 	}
 	
-	private static void updateNeighbours(List<Neighbour> neighbours, File neighboursFile) {
+	private static void updateNeighbours(List<Neighbour> neighbours, File neighboursFile, Map<Integer, Integer> vTimestamp) {
 		JSONParser jsonParser = new JSONParser();
 		try (FileReader reader = new FileReader(neighboursFile)){
 			Object obj = jsonParser.parse(reader);
@@ -313,11 +327,14 @@ public class MainTwo {
 			
 			e.printStackTrace();
 		}
-		neighbours.size();
+		for (Neighbour n : neighbours) {
+			if (!vTimestamp.containsKey(n.getPositionInVTimestamp())) 
+				vTimestamp.put(n.getPositionInVTimestamp(), 0);
+		}
 	}
 
 	public String prepareSendingString(int port) {
-		int redniBroj = (int) (((clock.currentTimeMillis()/1000) % 100) + 2);
+		int redniBroj = (int) (((clock.currentTimeMillis()/1000) % 100) + 1);
     	String sendString = MainTwo.measurmentsGenerator.get(redniBroj).split(Measurment.VECTOR_DELIMITER)[CO_POSITION];
     	if (sendString.equals("")) sendString = "0";
     	sendString += Measurment.SECTION_DELIMITER + clock.currentTimeMillis() + Measurment.SECTION_DELIMITER;
@@ -327,6 +344,10 @@ public class MainTwo {
 						vTimestamp.get(n.getPositionInVTimestamp()) + 1);
 				break;
 			}
+		}
+    	for (Neighbour n : neighbours) {
+			if (!vTimestamp.containsKey(n.getPositionInVTimestamp())) 
+				vTimestamp.put(n.getPositionInVTimestamp(), 0);
 		}
     	for (Map.Entry<Integer, Integer> entry : vTimestamp.entrySet()) {
     		sendString += entry.getValue() + Measurment.VECTOR_DELIMITER;
@@ -353,6 +374,9 @@ public class MainTwo {
 		}
 		System.out.println("\n------------------------------------------");
 		System.out.println("Sorted measurments by vector values:");
+//		for (Measurment m : rcvMeasurments) {
+//			if (m.getvTimestamp().size() <= positionInVTimestamp) rcvMeasurments.remove(m);
+//		}
 		Collections.sort(rcvMeasurments, new SortByVector(positionInVTimestamp));
 		for (Measurment m : rcvMeasurments) {
 			System.out.println(m.toString());

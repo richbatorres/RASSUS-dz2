@@ -14,7 +14,11 @@ public class SortByVector implements Comparator<Measurment>{
 
 
 	public int compare(Measurment m1, Measurment m2) {
-		return m2.getvTimestamp().get(position) - m1.getvTimestamp().get(position);
+		if (m1.getvTimestamp().size() > position && m2.getvTimestamp().size() > position) {
+			return m1.getvTimestamp().get(position) - m2.getvTimestamp().get(position);
+		}else {
+			throw new IndexOutOfBoundsException("bar smo našli dže je greška..");
+		}
 	}
 
 }

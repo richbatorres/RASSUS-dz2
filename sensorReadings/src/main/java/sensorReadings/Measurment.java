@@ -53,7 +53,7 @@ public class Measurment {
 		if (getClass() != obj.getClass())
 			return false;
 		Measurment other = (Measurment) obj;
-		if (other.toString().equals(this.toString())) return true;
+		if (other.value == this.value && other.sTimestamp == this.sTimestamp) return true;
 		else return false;
 	}
 
@@ -71,6 +71,10 @@ public class Measurment {
 
 	public void setvTimestamp(List<Integer> vTimestamp) {
 		this.vTimestamp = vTimestamp;
+	}
+	
+	public void setvTimestamp(List<Integer> vTimestamp, int position, int value) {
+		this.vTimestamp.set(position, value);
 	}
 
 	public int getValue() {
